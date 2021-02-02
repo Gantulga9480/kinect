@@ -1,4 +1,3 @@
-from pickle import NONE
 import numpy as np
 import paho.mqtt.client as mqtt
 import os
@@ -39,6 +38,7 @@ class PahoMqtt:
         self.is_running = True
         self.is_streaming = False
         self.is_idle = True
+        self.is_playing = False
 
         self.frame_index = 0
         self.label_start = list()
@@ -88,6 +88,8 @@ class PahoMqtt:
             self.is_streaming = False
             self.is_playing = True
             self.is_idle = False
+        elif msgs[0] == QUIT:
+            self.is_running = False
 
     def reset(self):
         print('[INFO] RESET ...')
@@ -100,36 +102,34 @@ class PahoMqtt:
         self.label_end.clear()
         self.label_start.clear()
         self.frame_index = 0
+        try:
+            del(self.rgb_out)
+            del(self.depth_out)
+        except Exception:
+            pass
         print('[INFO RESET DONE]')
 
     def save(self):
         print('[INFO] SAVING ...')
         self.rgb_out.release()
         self.depth_out.release()
-        try:
-            del self.rgb_out
-            del self.depth_out
-        except Exception as e:
-            print(str(e))
         os.makedirs(f'{self.path}')
         move(f'cache/{self.info}_rgb.avi', self.path)
         move(f'cache/{self.info}_depth.avi', self.path)
         print('[INFO] SAVING DONE')
 
     def rgb_callback(self, msg):
+        img = self.bridge.imgmsg_to_cv2(msg).astype(np.uint8)
+        self.rgb_frame = img
         if self.is_streaming:
-            img = self.bridge.imgmsg_to_cv2(msg)
-            img = np.round(img).astype(np.uint8)
-            self.rgb_frame = img
             self.rgb_out.write(img)
 
     def depth_callback(self, msg):
+        img = self.bridge.imgmsg_to_cv2(msg)
+        cv2.normalize(img, img, 0, 255, cv2.NORM_MINMAX)
+        img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB).astype(np.uint8)
+        self.depth_frame = img
         if self.is_streaming:
-            img = self.bridge.imgmsg_to_cv2(msg)
-            cv2.normalize(img, img, 0, 255, cv2.NORM_MINMAX)
-            img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
-            img = np.round(img).astype(np.uint8)
-            self.depth_frame = img
             self.depth_out.write(img)
 
     def create_writer(self):

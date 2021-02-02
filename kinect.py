@@ -1,8 +1,9 @@
 from paho_mqtt import PahoMqtt as Host, cv2
+import numpy as np
 import time
 from parameters import *
 
-kinect = Host(BROKER, 'kinect_1')
+kinect = Host(BROKER, NODE)
 kinect.loop_start()
 
 
@@ -15,6 +16,7 @@ while kinect.is_running:
         time.sleep(1)
     elif kinect.is_playing:
         print(f'[INFO] {kinect.info} is playing')
-        cv2.imshow(f'{kinect.info} color', kinect.rgb_frame)
-        cv2.imshow(f'{kinect.info} depth', kinect.depth_frame)
-        cv2.waitKey(30)
+        if np.any(kinect.rgb_frame):
+            cv2.imshow(f'{kinect.info} color', kinect.rgb_frame)
+            cv2.imshow(f'{kinect.info} depth', kinect.depth_frame)
+            cv2.waitKey(33)
