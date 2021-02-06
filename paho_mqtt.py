@@ -75,10 +75,6 @@ class PahoMqtt:
             if self.is_playing:
                 cv2.destroyAllWindows()
             self.is_playing = False
-        elif msgs[0] == ACTIVITIE_START:
-            self.label_start.append([f'{msgs[1]} start', self.frame_index])
-        elif msgs[0] == ACTIVITIE_STOP:
-            self.label_end.append([f'{msgs[1]} end', self.frame_index])
         elif msgs[0] == SAVE:
             self.save()
             self.reset()
